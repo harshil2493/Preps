@@ -1,16 +1,14 @@
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 
 public class AdjacentSquaredSumMain {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         int number = 15;
 
         AdjacentSquaredSum adjacentSquaredSum = new AdjacentSquaredSum(number);
 
         adjacentSquaredSum.createGraph();
-        System.out.println(adjacentSquaredSum);
+        adjacentSquaredSum.visitGraph();
     }
 }
 
@@ -26,7 +24,13 @@ class AdjacentSquaredSum {
 
         @Override
         public String toString() {
-            return "[Val: " + this.val + " Adjacent: " + this.adjacentNodes.toString() + "]";
+            StringBuilder adjNodes = new StringBuilder();
+
+            for (Node eachAdjNodes : adjacentNodes) {
+                adjNodes.append(" ").append(eachAdjNodes.val);
+            }
+
+            return "[Val: " + this.val + " Adjacent: " + adjNodes + "]";
         }
     }
 
@@ -35,7 +39,7 @@ class AdjacentSquaredSum {
 
     private int maxSquaredRootedNumberPossible;
 
-    private Map<Integer, List<Tuple<Node, Node>>> mapOfSquaredToPairs;
+    private Set<Integer> setOfSquaredNumbers;
 
     private void initMapOfNumberAndNodes() {
         this.mapOfNumberAndNodes = new HashMap<>();
@@ -46,34 +50,35 @@ class AdjacentSquaredSum {
         }
     }
 
-    private void initMapOfSquaredToPairs() throws Exception {
+    private void initMapOfSquaredToPairs() {
         int maxSum = this.maxNumber + this.maxNumber - 1;
 
-        this.maxSquaredRootedNumberPossible = (int) Math.floor(Math.sqrt(maxSum));
+        this.maxSquaredRootedNumberPossible = Math.abs((int) Math.floor(Math.sqrt(maxSum)));
 
-        if (this.maxSquaredRootedNumberPossible <= 1) {
-            throw new Exception("No Kidding Please!!!!! I Cannot Work With Numbers " +
+        if (this.maxSquaredRootedNumberPossible == 1) {
+            System.err.println("No Kidding Please!!!!! I Cannot Work With Numbers " +
                     "Where maxSquaredRootedNumberPossible Is Not Possible");
         }
 
-        this.mapOfSquaredToPairs = new HashMap<>();
+        this.setOfSquaredNumbers = new HashSet<>();
 
         for (int root = 2; root <= this.maxSquaredRootedNumberPossible; root++) {
-            List<Tuple<Node, Node>> listOfPairs;
-            listOfPairs = new ArrayList<>();
-            this.mapOfSquaredToPairs.put(root * root, listOfPairs);
+            this.setOfSquaredNumbers.add(root * root);
         }
     }
 
     private void fillMapOfSquaredToPairs() {
-        for (Integer eachSquaredKey : this.mapOfSquaredToPairs.keySet()) {
+        for (Integer eachSquaredKey : this.setOfSquaredNumbers) {
             for (int possibleNode = (eachSquaredKey / 2) + 1; possibleNode <= this.maxNumber; possibleNode++) {
-                int x = possibleNode;
-                int y = eachSquaredKey - x;
+                int alterNateVal = eachSquaredKey - possibleNode;
 
-                if (x * y > 0) {
-                    Tuple<Node, Node> newTuple = new Tuple<>(this.mapOfNumberAndNodes.get(x), this.mapOfNumberAndNodes.get(y));
-                    this.mapOfSquaredToPairs.get(eachSquaredKey).add(newTuple);
+                if (possibleNode * alterNateVal > 0) {
+                    Node xNode = this.mapOfNumberAndNodes.get(possibleNode);
+                    Node yNode = this.mapOfNumberAndNodes.get(alterNateVal);
+
+                    xNode.adjacentNodes.add(yNode);
+
+                    yNode.adjacentNodes.add(xNode);
                 } else {
                     break;
                 }
@@ -85,19 +90,68 @@ class AdjacentSquaredSum {
         this.maxNumber = maxNumber;
     }
 
-    AdjacentSquaredSum(int maxNumber) throws Exception {
+    AdjacentSquaredSum(int maxNumber) {
         if (maxNumber < 2) {
-            throw new Exception("Hey Hey Hey!! We Cannot Work With Number Lesser Than 2");
+            System.err.println("Hey Hey Hey!! We Cannot Work With Number Lesser Than 2");
         }
         initVariables(maxNumber);
     }
 
-    public void createGraph() throws Exception {
+    public void createGraph() {
         initMapOfNumberAndNodes();
 
         initMapOfSquaredToPairs();
 
         fillMapOfSquaredToPairs();
+    }
+
+    private Tuple<Boolean, String> exploreFromGivenHead(Node root) {
+
+        return new Tuple<>(true, "");
+    }
+
+    public void visitGraph() {
+        Node head = null;
+        boolean island = false;
+        List<Node> islandNodes = new ArrayList<>();
+        for (Node eachNode : this.mapOfNumberAndNodes.values()) {
+            if (eachNode.adjacentNodes.size() == 1) {
+                head = eachNode;
+            }
+            if (eachNode.adjacentNodes.size() == 0) {
+                island = true;
+                islandNodes.add(eachNode);
+            }
+        }
+        if (island) {
+            System.out.println("Some Nodes Does Not Have Adjacent Value! Cannot Create Inclusive Graph");
+            System.out.println("-- Island Nodes: " + islandNodes + " --");
+        } else {
+            if (head == null) {
+                System.out.println("Head Is Null!! For Number: " + this.maxNumber);
+                for (int nodeVal = this.maxNumber; nodeVal > 0; nodeVal--) {
+                    System.out.println("Exploring With: " + nodeVal);
+
+                    Tuple<Boolean, String> result = exploreFromGivenHead(this.mapOfNumberAndNodes.get(nodeVal));
+
+                    if (result.x) {
+                        System.out.println(result.y);
+                        break;
+                    } else {
+                        System.out.println("Bad Luck For Number: " + nodeVal);
+                    }
+                }
+            } else {
+                System.out.println("Exploring With: " + head);
+
+                Tuple<Boolean, String> result = exploreFromGivenHead(head);
+                if (result.x) {
+                    System.out.println("Graph: " + result.y);
+                }
+            }
+
+
+        }
     }
 
     @Override
@@ -106,6 +160,6 @@ class AdjacentSquaredSum {
         return "maxNumber: " + maxNumber + "\n" +
                 "mapOfNumberAndNodes: " + mapOfNumberAndNodes + "\n" +
                 "maxSquaredRootedNumberPossible: " + maxSquaredRootedNumberPossible + "\n" +
-                "mapOfSquaredToPairs: " + mapOfSquaredToPairs + "\n";
+                "setOfSquaredNumbers: " + setOfSquaredNumbers + "\n";
     }
 }
