@@ -3,16 +3,30 @@ import java.util.*;
 
 public class AdjacentSquaredSumMain {
     public static void main(String[] args) {
-        int number = 15;
+        int offset = 60;
+        int number = 0 * offset;
 
-        AdjacentSquaredSum adjacentSquaredSum = new AdjacentSquaredSum(number);
+        for (int indexN = number; indexN < number + offset; indexN++) {
+            String out = "Working For #: " + indexN;
+            long startTime = System.nanoTime();
+            AdjacentSquaredSum adjacentSquaredSum = new AdjacentSquaredSum(indexN);
 
-        adjacentSquaredSum.createGraph();
-        adjacentSquaredSum.visitGraph();
+            adjacentSquaredSum.createGraph();
+            Tuple<Boolean, String> tupleOfResultSuccessAndGraph = adjacentSquaredSum.visitGraph();
+
+            out += " | " + "Success: " + tupleOfResultSuccessAndGraph.x + " Graph: " + tupleOfResultSuccessAndGraph.y;
+            long endTime = System.nanoTime();
+
+            out += " | " + "Time: " + (endTime - startTime) / 1000000.0 + " ms";
+
+            System.out.println(out);
+        }
     }
 }
 
 class AdjacentSquaredSum {
+    boolean extraPrints = false;
+
     private class Node {
         int val;
         List<Node> adjacentNodes;
@@ -56,7 +70,7 @@ class AdjacentSquaredSum {
         this.maxSquaredRootedNumberPossible = Math.abs((int) Math.floor(Math.sqrt(maxSum)));
 
         if (this.maxSquaredRootedNumberPossible == 1) {
-            System.err.println("No Kidding Please!!!!! I Cannot Work With Numbers " +
+            if (extraPrints) System.err.println("No Kidding Please!!!!! I Cannot Work With Numbers " +
                     "Where maxSquaredRootedNumberPossible Is Not Possible");
         }
 
@@ -92,7 +106,7 @@ class AdjacentSquaredSum {
 
     AdjacentSquaredSum(int maxNumber) {
         if (maxNumber < 2) {
-            System.err.println("Hey Hey Hey!! We Cannot Work With Number Lesser Than 2");
+            if (extraPrints) System.err.println("Hey Hey Hey!! We Cannot Work With Number Lesser Than 2");
         }
         initVariables(maxNumber);
     }
@@ -105,12 +119,54 @@ class AdjacentSquaredSum {
         fillMapOfSquaredToPairs();
     }
 
-    private Tuple<Boolean, String> exploreFromGivenHead(Node root) {
-
-        return new Tuple<>(true, "");
+    private boolean verifyCompleteness(Set<Node> setOfVisitedNodes) {
+        return this.maxNumber == setOfVisitedNodes.size();
     }
 
-    public void visitGraph() {
+    private boolean visit(Node root, Set<Node> setOfVisitedNodes, Stack<Node> stackOfVisit) {
+        boolean graphIsComplete = false;
+        if (!setOfVisitedNodes.contains(root)) {
+
+            if (!graphIsComplete) {
+                stackOfVisit.push(root);
+                setOfVisitedNodes.add(root);
+                graphIsComplete = verifyCompleteness(setOfVisitedNodes);
+            }
+
+            if (!graphIsComplete) {
+                for (Node eachNode : root.adjacentNodes) {
+                    graphIsComplete = visit(eachNode, setOfVisitedNodes, stackOfVisit);
+                    if (graphIsComplete) {
+                        break;
+                    }
+                }
+            }
+
+            if (!graphIsComplete) {
+                setOfVisitedNodes.remove(root);
+                stackOfVisit.pop();
+            }
+        }
+
+        return graphIsComplete;
+    }
+
+    private Tuple<Boolean, String> generateSuccessAndTraversalString(Node root) {
+        Set<Node> setOfVisitedNodes = new HashSet<>();
+        Stack<Node> stackOfVisit = new Stack<>();
+        boolean graphIsComplete = visit(root, setOfVisitedNodes, stackOfVisit);
+
+        StringBuilder traversalString = new StringBuilder();
+
+        if (graphIsComplete) {
+            while (!stackOfVisit.isEmpty()) {
+                traversalString.append(stackOfVisit.pop().val).append(" ");
+            }
+        }
+        return new Tuple<>(graphIsComplete, traversalString.toString());
+    }
+
+    public Tuple<Boolean, String> visitGraph() {
         Node head = null;
         boolean island = false;
         List<Node> islandNodes = new ArrayList<>();
@@ -124,34 +180,36 @@ class AdjacentSquaredSum {
             }
         }
         if (island) {
-            System.out.println("Some Nodes Does Not Have Adjacent Value! Cannot Create Inclusive Graph");
-            System.out.println("-- Island Nodes: " + islandNodes + " --");
+            if (extraPrints)
+                System.out.println("Some Nodes Does Not Have Adjacent Value! Cannot Create Inclusive Graph");
+            if (extraPrints)
+                System.out.println("-- Island Nodes: " + islandNodes + " --");
         } else {
             if (head == null) {
-                System.out.println("Head Is Null!! For Number: " + this.maxNumber);
-                for (int nodeVal = this.maxNumber; nodeVal > 0; nodeVal--) {
-                    System.out.println("Exploring With: " + nodeVal);
+                if (extraPrints)
+                    System.out.println("Head Is Null!! For Number: " + this.maxNumber);
 
-                    Tuple<Boolean, String> result = exploreFromGivenHead(this.mapOfNumberAndNodes.get(nodeVal));
+                for (int nodeVal = this.maxNumber; nodeVal > 0; nodeVal--) {
+                    if (extraPrints)
+                        System.out.println("Exploring With: " + nodeVal);
+
+                    Tuple<Boolean, String> result = generateSuccessAndTraversalString(this.mapOfNumberAndNodes.get(nodeVal));
 
                     if (result.x) {
-                        System.out.println(result.y);
-                        break;
-                    } else {
-                        System.out.println("Bad Luck For Number: " + nodeVal);
+                        return result;
                     }
                 }
             } else {
-                System.out.println("Exploring With: " + head);
+                if (extraPrints)
+                    System.out.println("Exploring With: " + head);
 
-                Tuple<Boolean, String> result = exploreFromGivenHead(head);
-                if (result.x) {
-                    System.out.println("Graph: " + result.y);
-                }
+                Tuple<Boolean, String> result = generateSuccessAndTraversalString(head);
+
+                return result;
             }
-
-
         }
+
+        return new Tuple<>(false, "");
     }
 
     @Override
