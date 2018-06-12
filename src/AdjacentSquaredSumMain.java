@@ -26,7 +26,7 @@ class AdjacentSquaredSum {
 
         @Override
         public String toString() {
-            return "Node Val: " + this.val + " Adjacent: " + this.adjacentNodes.toString();
+            return "[Val: " + this.val + " Adjacent: " + this.adjacentNodes.toString() + "]";
         }
     }
 
@@ -66,7 +66,19 @@ class AdjacentSquaredSum {
     }
 
     private void fillMapOfSquaredToPairs() {
+        for (Integer eachSquaredKey : this.mapOfSquaredToPairs.keySet()) {
+            for (int possibleNode = (eachSquaredKey / 2) + 1; possibleNode <= this.maxNumber; possibleNode++) {
+                int x = possibleNode;
+                int y = eachSquaredKey - x;
 
+                if (x * y > 0) {
+                    Tuple<Node, Node> newTuple = new Tuple<>(this.mapOfNumberAndNodes.get(x), this.mapOfNumberAndNodes.get(y));
+                    this.mapOfSquaredToPairs.get(eachSquaredKey).add(newTuple);
+                } else {
+                    break;
+                }
+            }
+        }
     }
 
     private void initVariables(int maxNumber) {
