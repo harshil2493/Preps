@@ -1,10 +1,11 @@
 
 import java.util.*;
+import java.util.stream.Stream;
 
 public class AdjacentSquaredSumMain {
     public static void main(String[] args) {
-        int offset = 60;
-        int number = 0 * offset;
+        int offset = 500;
+        int number = 1 * offset;
 
         for (int indexN = number; indexN < number + offset; indexN++) {
             String out = "Working For #: " + indexN;
@@ -12,14 +13,16 @@ public class AdjacentSquaredSumMain {
             AdjacentSquaredSum adjacentSquaredSum = new AdjacentSquaredSum(indexN);
 
             adjacentSquaredSum.createGraph();
-            Tuple<Boolean, String> tupleOfResultSuccessAndGraph = adjacentSquaredSum.visitGraph();
-
-            out += " | " + "Success: " + tupleOfResultSuccessAndGraph.x + " Graph: " + tupleOfResultSuccessAndGraph.y;
+//            Tuple<Boolean, String> tupleOfResultSuccessAndGraph = adjacentSquaredSum.visitGraph();
+//
+//            out += " | " + "Success: " + tupleOfResultSuccessAndGraph.x + " Graph: " + tupleOfResultSuccessAndGraph.y;
             long endTime = System.nanoTime();
 
             out += " | " + "Time: " + (endTime - startTime) / 1000000.0 + " ms";
 
             System.out.println(out);
+
+            System.out.println(adjacentSquaredSum.getHistogramOfAdjacents());
         }
     }
 }
@@ -70,8 +73,10 @@ class AdjacentSquaredSum {
         this.maxSquaredRootedNumberPossible = Math.abs((int) Math.floor(Math.sqrt(maxSum)));
 
         if (this.maxSquaredRootedNumberPossible == 1) {
-            if (extraPrints) System.err.println("No Kidding Please!!!!! I Cannot Work With Numbers " +
-                    "Where maxSquaredRootedNumberPossible Is Not Possible");
+            if (extraPrints) {
+                System.err.println("No Kidding Please!!!!! I Cannot Work With Numbers " +
+                        "Where maxSquaredRootedNumberPossible Is Not Possible");
+            }
         }
 
         this.setOfSquaredNumbers = new HashSet<>();
@@ -106,7 +111,9 @@ class AdjacentSquaredSum {
 
     AdjacentSquaredSum(int maxNumber) {
         if (maxNumber < 2) {
-            if (extraPrints) System.err.println("Hey Hey Hey!! We Cannot Work With Number Lesser Than 2");
+            if (extraPrints) {
+                System.err.println("Hey Hey Hey!! We Cannot Work With Number Lesser Than 2");
+            }
         }
         initVariables(maxNumber);
     }
@@ -180,18 +187,21 @@ class AdjacentSquaredSum {
             }
         }
         if (island) {
-            if (extraPrints)
+            if (extraPrints) {
                 System.out.println("Some Nodes Does Not Have Adjacent Value! Cannot Create Inclusive Graph");
-            if (extraPrints)
+            }
+            if (extraPrints) {
                 System.out.println("-- Island Nodes: " + islandNodes + " --");
+            }
         } else {
             if (head == null) {
                 if (extraPrints)
                     System.out.println("Head Is Null!! For Number: " + this.maxNumber);
 
                 for (int nodeVal = this.maxNumber; nodeVal > 0; nodeVal--) {
-                    if (extraPrints)
+                    if (extraPrints) {
                         System.out.println("Exploring With: " + nodeVal);
+                    }
 
                     Tuple<Boolean, String> result = generateSuccessAndTraversalString(this.mapOfNumberAndNodes.get(nodeVal));
 
@@ -200,16 +210,39 @@ class AdjacentSquaredSum {
                     }
                 }
             } else {
-                if (extraPrints)
+                if (extraPrints) {
                     System.out.println("Exploring With: " + head);
+                }
 
-                Tuple<Boolean, String> result = generateSuccessAndTraversalString(head);
-
-                return result;
+                return generateSuccessAndTraversalString(head);
             }
         }
 
         return new Tuple<>(false, "");
+    }
+
+    public String getHistogramOfAdjacents() {
+        Map<Integer, Integer> mapOfNumberAdjToCount = new HashMap<>();
+        int totalNumberAdj = 0;
+        int totalEdges = 0;
+
+        for (Node eachNode : this.mapOfNumberAndNodes.values()) {
+            int size = eachNode.adjacentNodes.size();
+
+            int count = mapOfNumberAdjToCount.getOrDefault(size, 0) + 1;
+            mapOfNumberAdjToCount.put(size, count);
+
+            totalNumberAdj += size;
+            totalEdges += 1;
+        }
+
+        Stream<Integer> sortedVals = mapOfNumberAdjToCount.keySet().stream().sorted();
+
+        StringBuffer stringBuffer = new StringBuffer();
+
+        sortedVals.forEach((Integer x) -> stringBuffer.append(x).append(" ").append(mapOfNumberAdjToCount.get(x)).append(" - "));
+        stringBuffer.append(" Avg: ").append(totalNumberAdj * 1.0 / totalEdges);
+        return stringBuffer.toString();
     }
 
     @Override
